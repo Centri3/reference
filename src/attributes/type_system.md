@@ -32,8 +32,14 @@ pub enum Message {
     #[non_exhaustive] Quit,
 }
 
+#[non_exhaustive]
+pub struct Marker;
+
 // Non-exhaustive structs can be constructed as normal within the defining crate.
 let config = Config { window_width: 640, window_height: 480 };
+
+// Non-exhaustive unit structs can be constructed as normal within the defining crate.
+let marker = Marker;
 
 // Non-exhaustive structs can be matched on exhaustively within the defining crate.
 if let Config { window_width, window_height } = config {
@@ -55,6 +61,9 @@ match message {
     Message::Reaction(id) => { },
     Message::Quit => { },
 }
+
+// Non-exhaustive unit structs can be matched on as normal within the defining crate.
+let Marker { } = marker;
 ```
 
 Outside of the defining crate, types annotated with `non_exhaustive` have limitations that
@@ -70,12 +79,17 @@ Non-exhaustive types cannot be constructed outside of the defining crate:
 ```rust,ignore
 // `Config`, `Error`, and `Message` are types defined in an upstream crate that have been
 // annotated as `#[non_exhaustive]`.
-use upstream::{Config, Error, Message};
+use upstream::{Config, Error, Marker, Message};
 
 // Cannot construct an instance of `Config`, if new fields were added in
 // a new version of `upstream` then this would fail to compile, so it is
 // disallowed.
 let config = Config { window_width: 640, window_height: 480 };
+
+// Cannot construct a unit struct, if this is changed to a struct with
+// fields in a new version of `upstream` then this would fail to compile,
+// so it is disallowed.
+let marker = Marker;
 
 // Can construct an instance of `Error`, new variants being introduced would
 // not result in this failing to compile.
@@ -125,6 +139,9 @@ match message {
   Message::Reaction(type) => { },
   Message::Quit => { },
 }
+
+// Cannot match on a non-exhaustive unit struct without a wildcard.
+let Marker { } = marker;
 ```
 
 It's also not allowed to cast non-exhaustive types from foreign crates.
